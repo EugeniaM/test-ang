@@ -1,0 +1,13 @@
+parameters:
+  servicePrincipalName : ''
+  servicePrincipalPassword: ''
+  acrUser: ''
+  acrPassword: ''
+  acrServerLogin: ''
+  tenantName: ''
+  #registryName: ''
+  appProjectName: ''
+
+steps:
+  - bash: |
+      echo "devstep"
