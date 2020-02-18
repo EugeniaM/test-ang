@@ -1,0 +1,22 @@
+parameters:
+  servicePrincipalName : ''
+  servicePrincipalPassword: ''
+  acrUser: ''
+  acrPassword: ''
+  acrServerLogin: ''
+  tenantName: ''
+  #registryName: ''
+  appProjectName: ''
+
+steps:
+  - bash: |
+      echo "devstep"
+
+  - script: npm i
+    displayName: "UI (NPM): Resolve Dependencies"
+
+  - script: npm run build
+    displayName: "UI (NPM): Compile Static Website"
+
+  - publish: $(System.DefaultWorkingDirectory)/dist
+    artifact: uiApp

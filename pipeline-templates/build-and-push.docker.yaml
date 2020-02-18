@@ -1,0 +1,73 @@
+parameters:
+  servicePrincipalName : ''
+  servicePrincipalPassword: ''
+  acrUser: ''
+  acrPassword: ''
+  acrServerLogin: ''
+  tenantName: ''
+  appProjectName: ''
+
+steps:
+  - bash: az login --service-principal -u $servicePrincipalName -p $servicePrincipalPassword --tenant $tenantName
+    env:
+      servicePrincipalName: ${{ parameters.servicePrincipalName }}
+      servicePrincipalPassword: ${{ parameters.servicePrincipalPassword }}
+      tenantName: ${{ parameters.tenantName }}
+    displayName: "Azure connection using ServicePrincipal"
+
+  - bash: |
+      docker login -u $acrUser -p "$acrPassword" $acrServerLogin
+    env:
+      acrUser: ${{ parameters.acrUser }}
+      acrPassword: ${{ parameters.acrPassword }}
+      acrServerLogin: ${{ parameters.acrServerLogin }}
+    displayName: "Azure Container Registry connection"
+
+  - bash: |
+      if [[ -f .devops/DockerFile ]]
+      then
+       docker build -f .devops/DockerFile -t $acrServerLogin/$appProjectName:$(Build.BuildNumber) $(system.defaultWorkingDirectory)
+       docker build -f .devops/DockerFile -t $acrServerLogin/$appProjectName:latest $(system.defaultWorkingDirectory)
+      else
+       echo "##vso[task.logissue type=warning]Missing .devops/DockerFile."
+      fi
+    env:
+      appProjectName: ${{ parameters.appProjectName }}
+      acrServerLogin: ${{ parameters.acrServerLogin }}
+    displayName: "Build docker image"
+
+  - bash: |
+      mkdir -p $(system.defaultWorkingDirectory)/anchore-reports/
+      if [[ -f .devops/DockerFile ]]
+      then
+       curl -s https://ci-tools.anchore.io/inline_scan-v0.6.0  | bash -s -- -r -f -d .devops/DockerFile $acrServerLogin/$appProjectName:$(Build.BuildNumber)
+       ls -lart
+      else
+       echo "##vso[task.logissue type=warning]Missing .devops/DockerFile."
+      fi
+    env:
+      appProjectName: ${{ parameters.appProjectName }}
+      acrServerLogin: ${{ parameters.acrServerLogin }}
+    displayName: "Anchore Analysis"
+
+
+  - bash: |
+      if [[ -f .devops/DockerFile ]]
+      then
+       docker push $acrServerLogin/$appProjectName:$(Build.BuildNumber)
+       docker push $acrServerLogin/$appProjectName:latest
+      else
+       echo "##vso[task.logissue type=warning]Missing .devops/DockerFile."
+      fi
+    env:
+      registryName: ${{ parameters.registryName }}
+      appProjectName: ${{ parameters.appProjectName }}
+      acrServerLogin: ${{ parameters.acrServerLogin }}
+    displayName: "Push docker image"
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(system.defaultWorkingDirectory)/anchore-reports/'
+      ArtifactName: 'anchore'
+      publishLocation: 'Container'
+    displayName: "Publish Anchore report"

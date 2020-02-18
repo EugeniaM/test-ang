@@ -1,0 +1,64 @@
+name: $(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+resources:
+  - repo: self
+
+trigger:
+  branches:
+    include:
+      - master
+      - release/*
+      - hotfix/*
+      - refs/tags/*
+  paths:
+    exclude:
+      - README.md
+
+
+variables:
+  appProjectName: "$(appName)-$(projectName)"
+  tagUrl: https://dev.azure.com/tgits-code/DevOpsFactory/_apis/build/builds/$(Build.BuildId)/tags
+
+
+jobs:
+  ### JOB: DEV TASK
+  - job: DevTask
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    steps:
+      - template: pipeline-templates/devsteps.yaml
+        parameters:
+          servicePrincipalName : $(spappid)
+          servicePrincipalPassword: $(sppasswd)
+          tenantName: $(tenantid)
+          acrUser: $(acr-user)
+          acrPassword: $(acr-password)
+          acrServerLogin: $(acr-server-login)
+          # registryName: ${registryName}
+          appProjectName: $(appProjectName)
+
+  ### JOB: BUILD AND PUSH DOCKER IMAGE
+  - job: BuildAndPushDockerImage
+    dependsOn: DevTask
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    steps:
+      - bash: |
+          docker login  -u $(acr-user) -p "$(acr-password)" $(acr-server-login); registryName=$(echo "$(acr-server-login)" | cut -d'.' -f1 )
+      - download: current
+        artifact: uiApp
+      - bash: |
+          ls -la .
+          ls -la ..
+          ls -la ../uiApp
+          mkdir dist
+          mv ../uiApp/test-angular-ui ./dist
+      - template: pipeline-templates/build-and-push.docker.yaml
+        parameters:
+          servicePrincipalName : $(spappid)
+          servicePrincipalPassword: $(sppasswd)
+          tenantName: $(tenantid)
+          acrUser: $(acr-user)
+          acrPassword: $(acr-password)
+          acrServerLogin: $(acr-server-login)
+          appProjectName: $(appProjectName)
