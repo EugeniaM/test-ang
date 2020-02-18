@@ -51,7 +51,7 @@ jobs:
           ls -la .
           ls -la ..
           ls -la ../uiApp
-          mv ../uiApp/dist .
+          mv ../uiApp/test-angular-ui .
       - template: pipeline-templates/build-and-push.docker.yaml
         parameters:
           servicePrincipalName : $(spappid)
