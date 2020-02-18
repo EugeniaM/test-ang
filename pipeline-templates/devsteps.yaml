@@ -11,3 +11,4 @@ parameters:
 steps:
   - bash: |
       echo "devstep"
+      echo ${System.DefaultWorkingDirectory}
