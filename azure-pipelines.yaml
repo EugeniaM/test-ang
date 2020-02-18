@@ -48,6 +48,9 @@ jobs:
       - download: current
         artifact: uiApp
       - bash: |
+          ls -la .
+          ls -la ..
+          ls -la ../uiApp
           mv ../uiApp/dist .
       - template: pipeline-templates/build-and-push.docker.yaml
         parameters:
