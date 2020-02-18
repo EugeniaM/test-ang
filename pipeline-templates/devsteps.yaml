@@ -11,4 +11,9 @@ parameters:
 steps:
   - bash: |
       echo "devstep"
-      echo ${System.DefaultWorkingDirectory}
+
+  - script: npm i
+    displayName: "UI (NPM): Resolve Dependencies"
+
+  - script: npm run build
+    displayName: "UI (NPM): Compile Static Website"
