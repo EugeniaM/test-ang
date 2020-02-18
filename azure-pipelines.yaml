@@ -45,6 +45,10 @@ jobs:
     steps:
       - bash: |
           docker login  -u $(acr-user) -p "$(acr-password)" $(acr-server-login); registryName=$(echo "$(acr-server-login)" | cut -d'.' -f1 )
+      - download: current
+          artifact: uiApp
+      - bash: |
+          mv ../uiApp/dist .
       - template: pipeline-templates/build-and-push.docker.yaml
         parameters:
           servicePrincipalName : $(spappid)

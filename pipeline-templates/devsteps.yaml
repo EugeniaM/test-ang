@@ -17,3 +17,6 @@ steps:
 
   - script: npm run build
     displayName: "UI (NPM): Compile Static Website"
+
+  - publish: $(System.DefaultWorkingDirectory)/dist
+    artifact: uiApp
